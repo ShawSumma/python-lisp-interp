@@ -20,6 +20,7 @@
 
 (define twice
     (macro (op)
+        (py.print "(twice" (tostr op) ")")
         (call (name "do") op op)))
 
-(twice (print 10))
+(twice (py.print 10))

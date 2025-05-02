@@ -1,6 +1,12 @@
 
-from builtins import *
+import builtins as py
 from lark import Token, Tree
+
+def tostr(tree):
+    if isinstance(tree, Tree):
+        return '(' + ' '.join(map(tostr, tree.children)) + ')'
+    else:
+        return str(tree)
 
 def do(*args):
     return args[-1]

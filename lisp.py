@@ -9,13 +9,17 @@ parser = Lark.open("lisp.lark")
 scope = {}
 
 class Macro:
-    def __init__(self, params, then):
+    def __init__(self, params, body, then):
         self.params = params
+        self.body = body
         self.then = then
 
     @cache
     def __call__(self, *args):
         old = bind(self.params, args)
+
+        for thing in self.body:
+            visit(thing)
 
         body = visit(self.then)
 
@@ -57,7 +61,7 @@ def visit(tree):
                         case 'macro':
                             params = [str(param) for param in children[1].children]
 
-                            return Macro(params, children[2])
+                            return Macro(params, children[2:-1], children[-1])
                         case 'define':
                             scope[str(children[1])] = visit(children[2])
                             return
@@ -90,10 +94,26 @@ def visit(tree):
             case 'NUM':
                 return int(tree)
             case 'NAME':
-                name = str(tree)
+                name, *dot = str(tree).split('.')
+                if name == '':
+                    def func(obj):
+                        for part in dot:
+                            if hasattr(ret, part):
+                                obj = getattr(obj, part)
+                            else:
+                                obj = obj[part]
+                        return obj
+                    return func
                 if tree in scope:
-                    return scope[name]
-                return getattr(core, name) 
+                    ret = scope[name]
+                else:
+                    ret = getattr(core, name)
+                for part in dot:
+                    if hasattr(ret, part):
+                        ret = getattr(ret, part)
+                    else:
+                        ret = ret[part]
+                return ret
     raise NotImplementedError(str(tree))
 
 def main():
