@@ -2,9 +2,9 @@
 from lark import Lark, Token, Tree
 from sys import argv
 from functools import cache
-import core
+import core as core
 
-parser = Lark.open("lisp.lark")
+parser = Lark.open("lisp.lark", rel_to = __file__)
 
 scope = {}
 
@@ -85,8 +85,8 @@ def visit(tree):
                 func = visit(children[0])
                 if isinstance(func, Macro):
                     return visit(func(*children[1:]))
-                data = [visit(child) for child in children[1:]]
-                return func(*data)
+                args = [visit(child) for child in children[1:]]
+                return func(*args)
     else:
         match tree.type:
             case 'STR':
@@ -104,16 +104,11 @@ def visit(tree):
                                 obj = obj[part]
                         return obj
                     return func
-                if tree in scope:
+                if name in scope:
                     ret = scope[name]
                 else:
                     ret = getattr(core, name)
-                for part in dot:
-                    if hasattr(ret, part):
-                        ret = getattr(ret, part)
-                    else:
-                        ret = ret[part]
-                return ret
+                return core.get(ret, *dot)
     raise NotImplementedError(str(tree))
 
 def main():
